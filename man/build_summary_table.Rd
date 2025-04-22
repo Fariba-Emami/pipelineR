@@ -2,34 +2,13 @@
 % Please edit documentation in R/build_summary_table.R
 \name{build_summary_table}
 \alias{build_summary_table}
-\title{Summarize Column Value Counts}
+\title{Create Empty Log Tibble Structure}
 \usage{
-build_summary_table(data, summary_col)
-}
-\arguments{
-\item{data}{A data frame.}
-
-\item{summary_col}{The bare (unquoted) name of the column to summarize.}
+build_summary_table()
 }
 \value{
-A data frame (tibble) with counts of unique values, sorted
-descending by count. The columns will be named after \code{summary_col} and \code{n}.
-Stops with an error if the column doesn't exist.
+An empty tibble with columns: timestamp, batch_id, status, message.
 }
 \description{
-Counts unique values in a specified column of a data frame.
-}
-\examples{
-df <- data.frame(
-  category = sample(c("A", "B", "C"), 10, replace = TRUE),
-  value = rnorm(10)
-)
-
-summary_df <- build_summary_table(df, category)
-print(summary_df)
-#>   category n
-#> 1        C 4
-#> 2        B 3
-#> 3        A 3
-
+Defines and returns an empty tibble with predefined columns for logging.
 }

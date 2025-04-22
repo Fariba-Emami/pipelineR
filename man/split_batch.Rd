@@ -7,35 +7,13 @@
 split_batch(items, batch_size)
 }
 \arguments{
-\item{items}{A vector or list containing the items to be split.}
+\item{items}{A vector containing items to split.}
 
-\item{batch_size}{An integer specifying the maximum number of items in each batch.
-Must be positive.}
+\item{batch_size}{Integer. Max number of items per batch.}
 }
 \value{
-A list, where each element is a batch (a vector or list containing
-a subset of the original \code{items}). The last batch may contain fewer items
-than \code{batch_size}. Returns an empty list if \code{items} is empty.
+A list, where each element is a batch. Returns empty list if items is empty.
 }
 \description{
-Divides a vector or list of items into smaller batches (lists)
-of a specified maximum size using base R \code{split}.
-}
-\examples{
-symbols <- paste0("SYM", 1:23) # 23 items
-
-# Split into batches of 5
-batches_5 <- split_batch(symbols, 5)
-print(length(batches_5)) # Should be 5 batches
-print(batches_5[[1]])    # First batch
-print(batches_5[[5]])    # Last batch (smaller)
-
-# Split into batches of 10
-batches_10 <- split_batch(symbols, 10)
-print(length(batches_10)) # Should be 3 batches
-
-# Edge case: Empty input
-empty_batches <- split_batch(character(0), 5)
-print(empty_batches) # Should be list()
-
+Divides a vector into a list of smaller vectors (batches).
 }

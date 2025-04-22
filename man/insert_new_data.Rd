@@ -2,61 +2,21 @@
 % Please edit documentation in R/insert_new_data.R
 \name{insert_new_data}
 \alias{insert_new_data}
-\title{Insert Data into a Database Table (Simple)}
+\title{Insert New Data into Database Table, Avoiding Duplicates}
 \usage{
 insert_new_data(db_connection, table_name, new_data_df)
 }
 \arguments{
-\item{db_connection}{A valid DBIConnection object (e.g., from \code{DBI::dbConnect}).}
+\item{db_connection}{A valid DBIConnection object.}
 
-\item{table_name}{A character string: the name of the target database table.}
+\item{table_name}{Character string: Target database table (e.g., "data_sp500").}
 
-\item{new_data_df}{A data frame with data to insert. Column names should
-match the target table's columns.}
+\item{new_data_df}{Data frame/tibble in long format (symbol, date, metric, value).}
 }
 \value{
-Invisibly returns \code{TRUE} on success (from \code{DBI::dbAppendTable}).
-Throws an error on failure (e.g., table not found, column mismatch,
-connection issue).
+Invisibly returns number of rows inserted. Warns/stops on error. Returns 0 on empty input/all duplicates.
 }
 \description{
-Appends a data frame to a specified database table using a
-DBI connection via \code{DBI::dbAppendTable}.
-}
-\examples{
-\dontrun{
-# --- Prerequisites ---
-# install.packages("RSQLite") # Example backend
-library(DBI)
-
-# --- Setup Example Database ---
-# Create an in-memory SQLite database for demonstration
-con <- dbConnect(RSQLite::SQLite(), ":memory:")
-
-# Create an initial table
-initial_df <- data.frame(symbol = "AAPL", date = Sys.Date(), close = 150.0)
-dbWriteTable(con, "stock_prices", initial_df)
-print("Initial table:")
-print(dbReadTable(con, "stock_prices"))
-
-# --- Data to Insert ---
-df_to_insert <- data.frame(symbol = "MSFT", date = Sys.Date(), close = 280.5)
-
-# --- Use the function ---
-success <- insert_new_data(
-             db_connection = con,
-             table_name = "stock_prices",
-             new_data_df = df_to_insert
-           )
-
-# --- Verify ---
-if (success) {
-  print("Data inserted successfully. Updated table:")
-  print(dbReadTable(con, "stock_prices"))
-}
-
-# --- Clean up ---
-dbDisconnect(con)
-}
-
+Appends rows to a database table, checking 'symbol', 'date',
+'metric' keys to avoid duplicates. Assumes long format input.
 }

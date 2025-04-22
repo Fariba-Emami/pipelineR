@@ -2,34 +2,46 @@
 % Please edit documentation in R/fetch_symbols.R
 \name{fetch_symbols}
 \alias{fetch_symbols}
-\title{Fetch Stock Symbols from a Specified Index}
+\title{Fetch Stock Symbols from Database Table}
 \usage{
-fetch_symbols(index = "SP500", silent = FALSE)
+fetch_symbols(db_connection, table_name = "sp500", symbol_col_name = "symbol")
 }
 \arguments{
-\item{index}{A character string specifying the index to fetch symbols for.
-Common values include "SP500", "NASDAQ", "DOW". See \code{tidyquant::tq_index_options()}
-for available options. Defaults to "SP500".}
+\item{db_connection}{A valid DBIConnection object to your PostgreSQL database
+(e.g., returned by \code{connect_db()}).}
 
-\item{silent}{Logical. If \code{TRUE}, suppresses messages from \code{tq_index}. Defaults to \code{FALSE}.}
+\item{table_name}{Character string. The name of the table in the database
+containing the symbols. Defaults to "sp500".}
+
+\item{symbol_col_name}{Character string. The name of the column within
+\code{table_name} that holds the ticker symbols. Defaults to "symbol".}
 }
 \value{
-A character vector of stock symbols belonging to the specified index.
-Returns \code{NULL} and prints an error if the index is not found or the
-\code{tidyquant} package is not installed.
+A character vector of stock symbols retrieved from the database.
+Returns an empty character vector if the query fails or the table/column
+is empty or not found (issues warnings).
 }
 \description{
-Uses the \code{tidyquant} package to retrieve the constituent
-symbols for a given stock market index (e.g., S&P 500, NASDAQ).
+Retrieves stock ticker symbols from a specified table and column
+in the connected PostgreSQL database. Assumes the table contains the desired
+list of symbols (e.g., S&P 500 constituents).
 }
 \examples{
 \dontrun{
-# Ensure tidyquant is installed: install.packages("tidyquant")
+# --- Assumes ---
+# con <- connect_db() # Established connection
+# A table named 'sp500' exists with a column named 'symbol'
 
-sp500_symbols <- fetch_symbols(index = "SP500")
-head(sp500_symbols)
+# --- Example Usage ---
+symbols_from_db <- fetch_symbols(db_connection = con)
+head(symbols_from_db)
 
-nasdaq_symbols <- fetch_symbols(index = "NASDAQ")
-head(nasdaq_symbols)
+# Example specifying table and column names
+symbols_custom <- fetch_symbols(db_connection = con,
+                                table_name = "my_ticker_list",
+                                symbol_col_name = "ticker")
+head(symbols_custom)
+
+DBI::dbDisconnect(con)
 }
 }

@@ -2,84 +2,50 @@
 % Please edit documentation in R/start_pipline.R
 \name{start_pipeline}
 \alias{start_pipeline}
-\title{Start Data Pipeline using Yahoo Finance Data}
+\title{Run the Full Stock Data ETL Pipeline (Database Focused)}
 \usage{
 start_pipeline(
-  symbols_to_process,
-  db_connection,
-  table_name,
+  batch_size = 50,
+  symbol_table_name = "sp500",
+  symbol_col_name = "symbol",
+  data_table_name = "data_sp500",
+  log_table_name = "pipeline_logs",
   date_from,
   date_to = Sys.Date(),
-  format_digits = 2
+  db_connection = NULL
 )
 }
 \arguments{
-\item{symbols_to_process}{A character vector of stock symbols.}
+\item{batch_size}{Integer. Max symbols per API call batch. Defaults to 50.}
 
-\item{db_connection}{A valid DBI connection object.}
+\item{symbol_table_name}{Character string. DB table containing symbols. Defaults to "sp500".}
 
-\item{table_name}{The name of the target database table.}
+\item{symbol_col_name}{Character string. Column name for symbols in symbol table. Defaults to "symbol".}
 
-\item{date_from}{Character string or Date. Start date for the data query.}
+\item{data_table_name}{Character string. Main DB table for stock data. Defaults to "data_sp500".}
 
-\item{date_to}{Character string or Date. End date for the data query. Defaults to \code{Sys.Date()}.}
+\item{log_table_name}{Character string. DB table for logs. Defaults to "pipeline_logs".}
 
-\item{format_digits}{Integer. Digits for rounding in \code{format_data}. Defaults to 2.}
+\item{date_from}{Character string or Date. Start date for fetching data. Required.}
+
+\item{date_to}{Character string or Date. End date for fetching data. Defaults to \code{Sys.Date()}.}
+
+\item{db_connection}{Optional. An existing DBI connection. If NULL (default),
+\code{connect_db()} is called internally and disconnected upon exit.}
 }
 \value{
-Invisibly returns a list indicating pipeline outcome:
-\code{success}: Logical (TRUE if insertion completed without error, FALSE otherwise).
-\code{message}: Character string describing the outcome or error.
-\code{symbols_processed}: Character vector of unique symbols in the data that
-was attempted to be inserted (useful even on failure). NULL if fetch failed.
+Invisibly returns the final log data frame.
 }
 \description{
-Orchestrates a pipeline to fetch data for multiple symbols
-from Yahoo Finance, format it, and insert it into a database table.
+Orchestrates the process: connects to DB, fetches symbols from DB,
+processes in batches to get Yahoo data, formats, inserts new records into data table,
+logs results, and pushes logs to DB.
 }
 \examples{
 \dontrun{
-# --- Assumes you have defined ---
-# log_summary(message_text)
-# yahoo_query_data(symbols, date_from, date_to)
-# format_data(data, digits)
-# insert_new_data(db_connection, table_name, new_data_df)
-
-# --- Prerequisites ---
-# install.packages("tidyquant")
-# install.packages("RSQLite") # Example backend
-# install.packages("dplyr") # Often needed by format_data
-library(tidyquant)
-library(DBI)
-library(dplyr)
-
-# --- Setup Example Database ---
-con <- dbConnect(RSQLite::SQLite(), ":memory:")
-try(dbExecute(con, "CREATE TABLE stock_data (
-                 symbol TEXT, date TEXT, open REAL, high REAL,
-                 low REAL, close REAL, volume REAL, adjusted REAL)"), silent = TRUE)
-
-# --- Define Symbols & Dates ---
-symbols <- c("AAPL", "GOOG") # Example symbols
-start_date <- Sys.Date() - 60 # Last 60 days
-
-# --- Run the Pipeline ---
-pipeline_result <- start_pipeline(
-  symbols_to_process = symbols,
-  db_connection = con,
-  table_name = "stock_data",
-  date_from = start_date
-)
-
-# --- Check Results ---
-print(pipeline_result)
-if (pipeline_result$success) {
-  print("Data in DB:")
-  print(dbReadTable(con, "stock_data"))
+# Ensure env vars for connect_db() are set.
+# Ensure DB tables (sp500, data_sp500, pipeline_logs) exist.
+final_logs <- start_pipeline(date_from = Sys.Date() - 7)
+print(final_logs)
 }
-
-# --- Clean up ---
-dbDisconnect(con)
-}
-
 }

@@ -7,42 +7,15 @@
 yahoo_query_data(symbols, date_from, date_to = Sys.Date())
 }
 \arguments{
-\item{symbols}{A character vector of one or more stock ticker symbols.}
+\item{symbols}{Character vector of stock ticker symbols.}
 
-\item{date_from}{Character string or Date object. The start date for the data query
-(e.g., "YYYY-MM-DD").}
+\item{date_from}{Start date (character "YYYY-MM-DD" or Date).}
 
-\item{date_to}{Character string or Date object. The end date for the data query.
-Defaults to the current system date (\code{Sys.Date()}).}
+\item{date_to}{End date (character "YYYY-MM-DD" or Date). Defaults to \code{Sys.Date()}.}
 }
 \value{
-A tibble (data frame) containing the stock price data with columns
-like \code{symbol}, \code{date}, \code{open}, \code{high}, \code{low}, \code{close}, \code{volume}, \code{adjusted}.
-Returns an empty tibble if no valid symbols are provided, if data fetching fails,
-or if no data is found for the specified symbols/dates (with warnings).
-Stops with an error if \code{tidyquant} is not installed or \code{date_from} is missing.
+A tibble with stock price data. Returns empty tibble on error/no data (with warnings).
 }
 \description{
-Fetches daily Open, High, Low, Close, Volume, and Adjusted
-stock price data from Yahoo Finance for given symbols and dates using
-\code{tidyquant::tq_get}. Includes basic logging.
-}
-\examples{
-\dontrun{ # Requires tidyquant installation and internet connection
-# Assuming log_summary is defined: log_summary <- function(x) message(paste(Sys.time(), x))
-library(tidyquant)
-
-# Get data for Apple for the start of 2023
-aapl_data <- yahoo_query_data(symbols = "AAPL", date_from = "2023-01-01", date_to = "2023-01-10")
-print(head(aapl_data))
-
-# Get data for multiple symbols for the last 30 days
-multi_data <- yahoo_query_data(symbols = c("MSFT", "GOOG"), date_from = Sys.Date() - 30)
-print(head(multi_data))
-
-# Example of a symbol/date range with potentially no data
-future_data <- yahoo_query_data("AAPL", date_from = Sys.Date() + 1, date_to = Sys.Date() + 5)
-print(future_data) # Should be empty tibble with warning
-}
-
+Fetches daily OHLCV + Adjusted data from Yahoo Finance using \code{tidyquant}.
 }

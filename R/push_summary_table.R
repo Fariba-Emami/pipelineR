@@ -1,28 +1,50 @@
-#' Push (Save) Summary Table to CSV (Minimal)
+#' Push Data to Database Table
 #'
-#' @description Writes a data frame to a specified CSV file using `write.csv`.
+#' @description Appends data frame entries to a specified database table.
 #'
-#' @param summary_df A data frame.
-#' @param file_path Character string. The output CSV file path.
+#' @param db_connection A valid DBIConnection object.
+#' @param data_df Data frame containing the data to append.
+#' @param table_name Character string. Name of the target table. Defaults to "pipeline_logs".
 #'
-#' @return No return value (`NULL`). Called for its side effect of writing a file.
-#'   Will stop with an error from `write.csv` if inputs are wrong or writing fails.
+#' @return Invisibly returns TRUE if append was successful, FALSE otherwise.
+#'
+#' @importFrom DBI dbIsValid dbAppendTable
 #' @export
+#'
 #' @examples
-#' # Sample data
-#' summary_data <- data.frame(Item = c("X", "Y"), Count = c(10, 20))
-#' temp_path <- tempfile(fileext = ".csv")
-#'
-#' # Save the data
-#' push_summary_table(summary_data, temp_path)
-#'
-#' # Verify (optional)
-#' if(file.exists(temp_path)) {
-#'   print(paste("File written to:", temp_path))
-#'   # unlink(temp_path) # Clean up
+#' \dontrun{
+#' con <- DBI::dbConnect(...)
+#' logs <- data.frame(timestamp = Sys.time(), message = "Process completed")
+#' push_summary_table(con, logs)
 #' }
-#'
-push_summary_table <- function(summary_df, file_path) {
+push_summary_table <- function(db_connection, data_df, table_name = "pipeline_logs") {
+  # Check connection
+  if (!DBI::dbIsValid(db_connection)) {
+    stop("Invalid database connection.")
+  }
 
-  utils::write.csv(x = summary_df, file = file_path, row.names = FALSE)
+  # Validate input data
+  if (!is.data.frame(data_df)) {
+    warning("Input must be a data frame.")
+    return(invisible(FALSE))
+  }
+
+  # Handle empty data frame
+  if (nrow(data_df) == 0) {
+    message("Input data frame is empty.")
+    return(invisible(TRUE))
+  }
+
+  # Attempt to append data
+  message(paste("Pushing", nrow(data_df), "rows to", table_name))
+
+  success <- tryCatch({
+    DBI::dbAppendTable(db_connection, table_name, data_df)
+    TRUE
+  }, error = function(e) {
+    warning(paste("Failed to append data to", table_name, ":", e$message))
+    FALSE
+  })
+
+  invisible(success)
 }

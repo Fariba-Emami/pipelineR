@@ -2,34 +2,20 @@
 % Please edit documentation in R/push_summary_table.R
 \name{push_summary_table}
 \alias{push_summary_table}
-\title{Push (Save) Summary Table to CSV (Minimal)}
+\title{Push Log Summary Table to Database}
 \usage{
-push_summary_table(summary_df, file_path)
+push_summary_table(db_connection, log_data_df, table_name = "pipeline_logs")
 }
 \arguments{
-\item{summary_df}{A data frame.}
+\item{db_connection}{A valid DBIConnection object.}
 
-\item{file_path}{Character string. The output CSV file path.}
+\item{log_data_df}{Data frame/tibble containing log entries.}
+
+\item{table_name}{Character string. Name of the log table. Defaults to "pipeline_logs".}
 }
 \value{
-No return value (\code{NULL}). Called for its side effect of writing a file.
-Will stop with an error from \code{write.csv} if inputs are wrong or writing fails.
+Invisibly returns TRUE if append was successful, FALSE otherwise.
 }
 \description{
-Writes a data frame to a specified CSV file using \code{write.csv}.
-}
-\examples{
-# Sample data
-summary_data <- data.frame(Item = c("X", "Y"), Count = c(10, 20))
-temp_path <- tempfile(fileext = ".csv")
-
-# Save the data
-push_summary_table(summary_data, temp_path)
-
-# Verify (optional)
-if(file.exists(temp_path)) {
-  print(paste("File written to:", temp_path))
-  # unlink(temp_path) # Clean up
-}
-
+Appends log data frame entries to a specified database table.
 }

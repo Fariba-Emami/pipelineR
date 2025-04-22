@@ -1,65 +1,96 @@
-#' Fetch Stock Symbols from a Specified Index
+#' Fetch Stock Symbols from Database Table
 #'
-#' @description Uses the `tidyquant` package to retrieve the constituent
-#'   symbols for a given stock market index (e.g., S&P 500, NASDAQ).
+#' @description Retrieves stock ticker symbols from a specified table and column
+#'   in the connected PostgreSQL database. Assumes the table contains the desired
+#'   list of symbols (e.g., S&P 500 constituents).
 #'
-#' @param index A character string specifying the index to fetch symbols for.
-#'   Common values include "SP500", "NASDAQ", "DOW". See `tidyquant::tq_index_options()`
-#'   for available options. Defaults to "SP500".
-#' @param silent Logical. If `TRUE`, suppresses messages from `tq_index`. Defaults to `FALSE`.
+#' @param db_connection A valid DBIConnection object to your PostgreSQL database
+#'   (e.g., returned by `connect_db()`).
+#' @param table_name Character string. The name of the table in the database
+#'   containing the symbols. Defaults to "sp500".
+#' @param symbol_col_name Character string. The name of the column within
+#'   `table_name` that holds the ticker symbols. Defaults to "symbol".
 #'
-#' @return A character vector of stock symbols belonging to the specified index.
-#'   Returns `NULL` and prints an error if the index is not found or the
-#'   `tidyquant` package is not installed.
+#' @return A character vector of stock symbols retrieved from the database.
+#'   Returns an empty character vector if the query fails or the table/column
+#'   is empty or not found (issues warnings).
 #'
-#' @importFrom dplyr pull
-#' @importFrom tidyquant tq_index tq_index_options
-#' @importFrom rlang .data
+#' @importFrom DBI dbIsValid dbQuoteIdentifier dbGetQuery
+#' @importFrom glue glue
+#' @importFrom rlang abort warn inform
 #' @export
 #' @examples
 #' \dontrun{
-#' # Ensure tidyquant is installed: install.packages("tidyquant")
+#' # --- Assumes ---
+#' # con <- connect_db() # Established connection
+#' # A table named 'sp500' exists with a column named 'symbol'
 #'
-#' sp500_symbols <- fetch_symbols(index = "SP500")
-#' head(sp500_symbols)
+#' # --- Example Usage ---
+#' symbols_from_db <- fetch_symbols(db_connection = con)
+#' head(symbols_from_db)
 #'
-#' nasdaq_symbols <- fetch_symbols(index = "NASDAQ")
-#' head(nasdaq_symbols)
+#' # Example specifying table and column names
+#' symbols_custom <- fetch_symbols(db_connection = con,
+#'                                 table_name = "my_ticker_list",
+#'                                 symbol_col_name = "ticker")
+#' head(symbols_custom)
+#'
+#' DBI::dbDisconnect(con)
 #' }
-fetch_symbols <- function(index = "SP500", silent = FALSE) {
+fetch_symbols <- function(db_connection, table_name = "sp500", symbol_col_name = "symbol") {
 
-  # Check if tidyquant is installed (moved from yahoo_query_data example, good here too)
-  if (!requireNamespace("tidyquant", quietly = TRUE)) {
-    stop("Package 'tidyquant' is required for this function. Please install it.", call. = FALSE)
+  # --- Basic Input Validation ---
+  if (!DBI::dbIsValid(db_connection)) {
+    rlang::abort("Invalid database connection provided.")
+  }
+  if (!is.character(table_name) || length(table_name) != 1 || nchar(table_name) == 0) {
+    rlang::abort("'table_name' must be a non-empty character string.")
+  }
+  if (!is.character(symbol_col_name) || length(symbol_col_name) != 1 || nchar(symbol_col_name) == 0) {
+    rlang::abort("'symbol_col_name' must be a non-empty character string.")
+  }
+  # Check for glue package dependency (optional but good if used)
+  if (!requireNamespace("glue", quietly = TRUE)) {
+    # Alternative: use paste0 if glue is not mandatory
+    # message("Consider installing 'glue' package for cleaner SQL construction.")
+    rlang::abort("Package 'glue' is recommended for this function (SQL construction).")
   }
 
-  # Validate index choice (optional but good practice from previous example)
-  available_indices <- tidyquant::tq_index_options()
-  if (!index %in% available_indices) {
-    warning("Index '", index, "' not found in tidyquant::tq_index_options(). ",
-            "Attempting to fetch anyway, but it might fail.", call. = FALSE)
-  }
+  # --- Safely Quote Identifiers ---
+  safe_table <- DBI::dbQuoteIdentifier(db_connection, table_name)
+  safe_col <- DBI::dbQuoteIdentifier(db_connection, symbol_col_name)
 
+  # --- Construct SQL Query ---
+  # Selecting only the specified column
+  sql <- glue::glue("SELECT {safe_col} FROM {safe_table}")
 
-  symbols_data <- tryCatch({
-    tidyquant::tq_index(index, use_fallback = TRUE)
+  # --- Execute Query ---
+  rlang::inform(paste("Querying database for symbols from table:", table_name, "column:", symbol_col_name))
+  result_df <- tryCatch({
+    DBI::dbGetQuery(db_connection, sql)
   }, error = function(e) {
-    message("Error fetching index '", index, "': ", e$message)
-    return(NULL) # Return NULL on error
+    rlang::warn(paste("Failed to query table", table_name, "for symbols:", e$message))
+    return(NULL) # Signal error
   })
 
-  # Check if data retrieval was successful
-  if (is.null(symbols_data) || nrow(symbols_data) == 0) {
-    message("Could not retrieve symbols for index: ", index)
-    return(character(0)) # Return empty character vector
+  # --- Process Results ---
+  if (is.null(result_df)) {
+    # Error occurred during query
+    return(character(0))
+  } else if (nrow(result_df) == 0) {
+    # Query succeeded but returned no rows
+    rlang::warn(paste("No symbols found in table '", table_name, "' column '", symbol_col_name, "'.", sep=""))
+    return(character(0))
+  } else if (!symbol_col_name %in% names(result_df)) {
+    # Safety check: Query succeeded but expected column is missing in result
+    rlang::warn(paste("Column '", symbol_col_name, "' not found in the result from table '", table_name, "'. Check column name.", sep=""))
+    return(character(0))
   }
-
-  # Extract the 'symbol' column using the .data pronoun
-  symbols_vector <- dplyr::pull(symbols_data, .data$symbol) # <-- CORRECTED HERE
-
-  if (!silent) {
-    message("Successfully fetched ", length(symbols_vector), " symbols for index '", index, "'.")
+  else {
+    # Success: Extract the column as a vector
+    # Use [[ ]] to access the column by its string name
+    symbols_vector <- result_df[[symbol_col_name]]
+    rlang::inform(paste("Successfully fetched", length(symbols_vector), "symbols from database table:", table_name))
+    return(symbols_vector)
   }
-
-  return(symbols_vector)
 }

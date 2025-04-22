@@ -2,39 +2,16 @@
 % Please edit documentation in R/format_data.R
 \name{format_data}
 \alias{format_data}
-\title{Format Stock OHLCV and Adjusted Data (Rounding)}
+\title{Format Stock Data to Long Format}
 \usage{
-format_data(data, digits = 2)
+format_data(wide_data)
 }
 \arguments{
-\item{data}{A data frame, typically the output from
-\code{tidyquant::tq_get(get = "stock.prices")}.}
-
-\item{digits}{Integer. The number of decimal places to round the numeric columns to.
-Defaults to 2.}
+\item{wide_data}{Data frame/tibble with columns 'symbol', 'date', 'open', etc.}
 }
 \value{
-The data frame with the relevant numeric OHLC, Volume, and Adjusted columns
-processed (typically rounded).
-It only attempts to format columns that exist and are numeric.
+Tibble with columns 'symbol', 'date', 'metric', 'value'. Empty tibble on error/bad input.
 }
 \description{
-Rounds standard price columns (open, high, low, close, adjusted)
-and includes the volume column in the formatting process (though rounding
-typically doesn't affect integer volume). Works on data frames obtained
-from \code{tidyquant}.
-}
-\examples{
-\dontrun{ # Requires tidyquant installation
-library(tidyquant)
-
-# Get some sample data
-stock_data_raw <- tq_get("AAPL", get = "stock.prices", from = "2023-01-01", to = "2023-01-10")
-print(head(stock_data_raw, 3)) # Original data
-
-# Format the data (round prices, process volume)
-stock_data_formatted <- format_data(stock_data_raw, digits = 2)
-print(head(stock_data_formatted, 3)) # Formatted data (volume likely unchanged by round)
-}
-
+Reshapes wide stock data (from \code{yahoo_query_data}) to long format.
 }

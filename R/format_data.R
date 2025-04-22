@@ -1,71 +1,30 @@
-#' Format Stock OHLCV and Adjusted Data (Rounding)
-#'
-#' @description Rounds standard price columns (open, high, low, close, adjusted)
-#'   and includes the volume column in the formatting process (though rounding
-#'   typically doesn't affect integer volume). Works on data frames obtained
-#'   from `tidyquant`.
-#'
-#' @param data A data frame, typically the output from
-#'   `tidyquant::tq_get(get = "stock.prices")`.
-#' @param digits Integer. The number of decimal places to round the numeric columns to.
-#'   Defaults to 2.
-#'
-#' @return The data frame with the relevant numeric OHLC, Volume, and Adjusted columns
-#'   processed (typically rounded).
-#'   It only attempts to format columns that exist and are numeric.
-#'
-#' @importFrom dplyr mutate across any_of select where
-#' @importFrom rlang abort
+# --- format_data() function (No changes from previous version) ---
+#' Format Stock Data to Long Format
+#' @description Reshapes wide stock data (from `yahoo_query_data`) to long format.
+#' @param wide_data Data frame/tibble with columns 'symbol', 'date', 'open', etc.
+#' @return Tibble with columns 'symbol', 'date', 'metric', 'value'. Empty tibble on error/bad input.
+#' @importFrom tidyr pivot_longer
+#' @importFrom dplyr select any_of
+#' @importFrom rlang abort warn
 #' @importFrom magrittr %>%
+#' @importFrom tibble tibble
 #' @export
-#' @examples
-#' \dontrun{ # Requires tidyquant installation
-#' library(tidyquant)
-#'
-#' # Get some sample data
-#' stock_data_raw <- tq_get("AAPL", get = "stock.prices", from = "2023-01-01", to = "2023-01-10")
-#' print(head(stock_data_raw, 3)) # Original data
-#'
-#' # Format the data (round prices, process volume)
-#' stock_data_formatted <- format_data(stock_data_raw, digits = 2)
-#' print(head(stock_data_formatted, 3)) # Formatted data (volume likely unchanged by round)
-#' }
-#'
-format_data <- function(data, digits = 2) {
+format_data <- function(wide_data) {
+  if (!requireNamespace("tidyr", quietly = TRUE) || !requireNamespace("dplyr", quietly = TRUE)) {
+    rlang::abort("Packages 'tidyr' and 'dplyr' required.") }
+  if(!is.data.frame(wide_data) || nrow(wide_data) == 0) {
+    rlang::warn("Input 'wide_data' empty/not df. Returning empty tibble."); return(tibble::tibble()) }
 
+  required_cols <- c("symbol", "date"); measure_cols <- c("open", "high", "low", "close", "volume", "adjusted")
+  if (!all(required_cols %in% names(wide_data))) {
+    rlang::warn("Input missing 'symbol'/'date'. Returning empty tibble."); return(tibble::tibble()) }
+  cols_to_pivot <- intersect(measure_cols, names(wide_data))
+  if(length(cols_to_pivot) == 0) {
+    rlang::warn("Input missing measure columns (open, etc.). Returning empty tibble."); return(tibble::tibble()) }
 
-  if (!is.data.frame(data)) {
-    rlang::abort("Input 'data' must be a data frame.")
-  }
-  if (!is.numeric(digits) || length(digits) != 1 || digits < 0 || digits %% 1 != 0) {
-    rlang::abort("'digits' must be a single non-negative integer.")
-  }
-
-  target_cols <- c("open", "high", "low", "close", "volume", "adjusted")
-
-
-  cols_present <- intersect(target_cols, names(data))
-
-  if (length(cols_present) == 0) {
-    warning("No standard columns (open, high, low, close, volume, adjusted) found. Returning original data.", call. = FALSE)
-    return(data)
-  }
-
-
-  numeric_cols_to_format <- data %>%
-    dplyr::select(dplyr::any_of(cols_present)) %>%
-    dplyr::select(dplyr::where(is.numeric)) %>%
-    names()
-
-  if (length(numeric_cols_to_format) == 0) {
-    warning("None of the standard target columns found were numeric. Returning original data.", call. = FALSE)
-    return(data)
-  }
-
-
-  data <- dplyr::mutate(data,
-                        dplyr::across(dplyr::all_of(numeric_cols_to_format), ~ round(.x, digits = digits))
-  )
-
-  return(data)
+  long_data <- tryCatch({ wide_data %>%
+      tidyr::pivot_longer(cols = dplyr::any_of(cols_to_pivot), names_to = "metric", values_to = "value") %>%
+      dplyr::select(dplyr::any_of(c("symbol", "date", "metric", "value")))
+  }, error = function(e){ rlang::abort(paste("pivot_longer failed:", e$message)) })
+  return(long_data)
 }

@@ -2,23 +2,22 @@
 % Please edit documentation in R/log_summary.R
 \name{log_summary}
 \alias{log_summary}
-\title{Log a Simple Summary Message}
+\title{Append Log Entry to Summary Tibble}
 \usage{
-log_summary(message_text)
+log_summary(log_df, batch_id = "N/A", status = "INFO", message_text = "")
 }
 \arguments{
-\item{message_text}{Character string. The message to log.}
+\item{log_df}{The existing log summary tibble.}
+
+\item{batch_id}{Character string identifier for the batch/step.}
+
+\item{status}{Character string indicating outcome (e.g., "OK", "ERROR").}
+
+\item{message_text}{Character string providing details.}
 }
 \value{
-Invisibly returns \code{NULL}. Its primary effect is printing to the console.
+The \code{log_df} tibble with the new log entry appended.
 }
 \description{
-Prints a timestamped message to the console, typically used
-to log the completion or summary of an operation.
-}
-\examples{
-log_summary("Data processing complete for AAPL.")
-rows_inserted <- 50
-log_summary(paste("Successfully inserted", rows_inserted, "records."))
-
+Adds a new row representing a log event to a log summary tibble.
 }
