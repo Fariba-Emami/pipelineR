@@ -2,20 +2,27 @@
 % Please edit documentation in R/push_summary_table.R
 \name{push_summary_table}
 \alias{push_summary_table}
-\title{Push Log Summary Table to Database}
+\title{Push Data to Database Table}
 \usage{
-push_summary_table(db_connection, log_data_df, table_name = "pipeline_logs")
+push_summary_table(db_connection, data_df, table_name = "pipeline_logs")
 }
 \arguments{
 \item{db_connection}{A valid DBIConnection object.}
 
-\item{log_data_df}{Data frame/tibble containing log entries.}
+\item{data_df}{Data frame containing the data to append.}
 
-\item{table_name}{Character string. Name of the log table. Defaults to "pipeline_logs".}
+\item{table_name}{Character string. Name of the target table. Defaults to "pipeline_logs".}
 }
 \value{
 Invisibly returns TRUE if append was successful, FALSE otherwise.
 }
 \description{
-Appends log data frame entries to a specified database table.
+Appends data frame entries to a specified database table.
+}
+\examples{
+\dontrun{
+con <- DBI::dbConnect(...)
+logs <- data.frame(timestamp = Sys.time(), message = "Process completed")
+push_summary_table(con, logs)
+}
 }
