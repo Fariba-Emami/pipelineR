@@ -2,18 +2,30 @@
 % Please edit documentation in R/split_batch.R
 \name{split_batch}
 \alias{split_batch}
-\title{Split Items into Batches}
+\title{Split a tibble of symbols into batches}
 \usage{
-split_batch(items, batch_size)
+split_batch(symbol_list, batch_size = 25)
 }
 \arguments{
-\item{items}{A vector containing items to split.}
+\item{symbol_list}{A tibble containing at least a column \code{symbol}. Typically output from \code{fetch_symbols()}.}
 
-\item{batch_size}{Integer. Max number of items per batch.}
+\item{batch_size}{An integer indicating the maximum number of rows per batch. Default is 25.}
 }
 \value{
-A list, where each element is a batch. Returns empty list if items is empty.
+A list of tibbles, each containing up to \code{batch_size} symbols.
 }
 \description{
-Divides a vector into a list of smaller vectors (batches).
+This function splits a tibble into a list of smaller tibbles, each containing up to \code{batch_size} rows.
+}
+\details{
+Batching is important because querying too many symbols at once from external APIs (like Yahoo Finance)
+can lead to:
+\itemize{
+\item API rate limits being exceeded,
+\item Timeout errors,
+\item Partial or corrupted data responses.
+}
+
+By splitting requests into manageable batches, we ensure more stable API calls, reduce failure rates,
+and improve overall pipeline reliability.
 }

@@ -2,46 +2,18 @@
 % Please edit documentation in R/fetch_symbols.R
 \name{fetch_symbols}
 \alias{fetch_symbols}
-\title{Fetch Stock Symbols from Database Table}
+\title{Fetch S&P 500 symbols from the database}
 \usage{
-fetch_symbols(db_connection, table_name = "sp500", symbol_col_name = "symbol")
+fetch_symbols(con)
 }
 \arguments{
-\item{db_connection}{A valid DBIConnection object to your PostgreSQL database
-(e.g., returned by \code{connect_db()}).}
-
-\item{table_name}{Character string. The name of the table in the database
-containing the symbols. Defaults to "sp500".}
-
-\item{symbol_col_name}{Character string. The name of the column within
-\code{table_name} that holds the ticker symbols. Defaults to "symbol".}
+\item{con}{A valid DBI database connection.}
 }
 \value{
-A character vector of stock symbols retrieved from the database.
-Returns an empty character vector if the query fails or the table/column
-is empty or not found (issues warnings).
+A tibble containing two columns: \code{symbol} and \code{index_ts}.
+If no symbols are found, a warning is issued and an empty tibble is returned.
 }
 \description{
-Retrieves stock ticker symbols from a specified table and column
-in the connected PostgreSQL database. Assumes the table contains the desired
-list of symbols (e.g., S&P 500 constituents).
-}
-\examples{
-\dontrun{
-# --- Assumes ---
-# con <- connect_db() # Established connection
-# A table named 'sp500' exists with a column named 'symbol'
-
-# --- Example Usage ---
-symbols_from_db <- fetch_symbols(db_connection = con)
-head(symbols_from_db)
-
-# Example specifying table and column names
-symbols_custom <- fetch_symbols(db_connection = con,
-                                table_name = "my_ticker_list",
-                                symbol_col_name = "ticker")
-head(symbols_custom)
-
-DBI::dbDisconnect(con)
-}
+This function retrieves a list of distinct symbols and their corresponding index_ts
+from the \code{sp500.info} table in the PostgreSQL database.
 }

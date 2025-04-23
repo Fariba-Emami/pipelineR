@@ -2,27 +2,20 @@
 % Please edit documentation in R/push_summary_table.R
 \name{push_summary_table}
 \alias{push_summary_table}
-\title{Push Data to Database Table}
+\title{Push the summary table to PostgreSQL}
 \usage{
-push_summary_table(db_connection, data_df, table_name = "pipeline_logs")
+push_summary_table(con, summary_table, user_login = Sys.getenv("user_login"))
 }
 \arguments{
-\item{db_connection}{A valid DBIConnection object.}
+\item{con}{A valid DBI database connection.}
 
-\item{data_df}{Data frame containing the data to append.}
+\item{summary_table}{The tibble created during the pipeline (via build_summary_table and log_summary).}
 
-\item{table_name}{Character string. Name of the target table. Defaults to "pipeline_logs".}
+\item{user_login}{Optional, defaults to Sys.getenv('user_login'). The login of the student (e.g., "paul", "fariba").}
 }
 \value{
-Invisibly returns TRUE if append was successful, FALSE otherwise.
+Nothing. Pushes logs into the database.
 }
 \description{
-Appends data frame entries to a specified database table.
-}
-\examples{
-\dontrun{
-con <- DBI::dbConnect(...)
-logs <- data.frame(timestamp = Sys.time(), message = "Process completed")
-push_summary_table(con, logs)
-}
+Push the summary table to PostgreSQL
 }

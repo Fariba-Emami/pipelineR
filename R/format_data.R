@@ -1,30 +1,27 @@
-# --- format_data() function (No changes from previous version) ---
-#' Format Stock Data to Long Format
-#' @description Reshapes wide stock data (from `yahoo_query_data`) to long format.
-#' @param wide_data Data frame/tibble with columns 'symbol', 'date', 'open', etc.
-#' @return Tibble with columns 'symbol', 'date', 'metric', 'value'. Empty tibble on error/bad input.
-#' @importFrom tidyr pivot_longer
-#' @importFrom dplyr select any_of
-#' @importFrom rlang abort warn
-#' @importFrom magrittr %>%
-#' @importFrom tibble tibble
+
+#' Format wide Yahoo Finance data into long format
+#'
+#' This function reshapes a wide tibble of stock prices into a long format
+#' compatible with the `data_sp500` database table.
+#'
+#' @param data A tibble with columns like open, high, low, close, volume, close_adjusted, etc.
+#' @importFrom lubridate ymd
+#' @return A tibble in long format with columns: index_ts, date, metric, value.
 #' @export
-format_data <- function(wide_data) {
-  if (!requireNamespace("tidyr", quietly = TRUE) || !requireNamespace("dplyr", quietly = TRUE)) {
-    rlang::abort("Packages 'tidyr' and 'dplyr' required.") }
-  if(!is.data.frame(wide_data) || nrow(wide_data) == 0) {
-    rlang::warn("Input 'wide_data' empty/not df. Returning empty tibble."); return(tibble::tibble()) }
+format_data <- function(data) {
 
-  required_cols <- c("symbol", "date"); measure_cols <- c("open", "high", "low", "close", "volume", "adjusted")
-  if (!all(required_cols %in% names(wide_data))) {
-    rlang::warn("Input missing 'symbol'/'date'. Returning empty tibble."); return(tibble::tibble()) }
-  cols_to_pivot <- intersect(measure_cols, names(wide_data))
-  if(length(cols_to_pivot) == 0) {
-    rlang::warn("Input missing measure columns (open, etc.). Returning empty tibble."); return(tibble::tibble()) }
+  if (is.null(data)) {
+    stop("'new_data' must be provided.")
+  }
 
-  long_data <- tryCatch({ wide_data %>%
-      tidyr::pivot_longer(cols = dplyr::any_of(cols_to_pivot), names_to = "metric", values_to = "value") %>%
-      dplyr::select(dplyr::any_of(c("symbol", "date", "metric", "value")))
-  }, error = function(e){ rlang::abort(paste("pivot_longer failed:", e$message)) })
+  # Pivot longer
+  long_data <- data |>
+    tidyr::pivot_longer(
+      cols = c(open, high, low, close, volume, close_adjusted),
+      names_to = "metric",
+      values_to = "value"
+    ) |>
+    dplyr::select(index_ts, date, metric, value)
+
   return(long_data)
 }

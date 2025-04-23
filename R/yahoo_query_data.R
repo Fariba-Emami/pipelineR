@@ -1,28 +1,69 @@
-# --- yahoo_query_data() function (No changes from previous version) ---
-#' Query Yahoo Finance Stock Price Data
-#' @description Fetches daily OHLCV + Adjusted data from Yahoo Finance using `tidyquant`.
-#' @param symbols Character vector of stock ticker symbols.
-#' @param date_from Start date (character "YYYY-MM-DD" or Date).
-#' @param date_to End date (character "YYYY-MM-DD" or Date). Defaults to `Sys.Date()`.
-#' @return A tibble with stock price data. Returns empty tibble on error/no data (with warnings).
-#' @importFrom tidyquant tq_get
-#' @importFrom rlang abort warn is_character
-#' @importFrom tibble tibble is_tibble
+#' Query Yahoo Finance for historical OHLCV stock data
+#'
+#' This function fetches full OHLCV (Open, High, Low, Close, Volume) data from Yahoo Finance
+#' for a given batch of tickers using tidyquant::tq_get. It automatically handles optional retrying
+#' in case of API errors for better stability.
+#'
+#' @param batch_list A tibble with at least a column `symbol`, typically output from `split_batch()`.
+#' @param from A Date indicating the start date for historical data.
+#' @param to A Date indicating the end date for historical data.
+#' @param retry Logical. If TRUE, allows retrying once in case of failure. If FALSE, stops immediately after the first error. Default is TRUE.
+#'
+#' @return A tibble containing the fetched OHLCV data with columns: symbol, date, open, high, low, close, volume, adjusted, index_ts, source.
 #' @export
-yahoo_query_data <- function(symbols, date_from, date_to = Sys.Date()) {
-  if (!requireNamespace("tidyquant", quietly = TRUE)) { rlang::abort("Package 'tidyquant' required.") }
-  if (missing(symbols) || !rlang::is_character(symbols) || length(symbols) == 0) {
-    rlang::warn("No valid 'symbols' provided. Returning empty tibble."); return(tibble::tibble()) }
-  if (missing(date_from)) { rlang::abort("'date_from' must be provided.") }
+yahoo_query_data <- function(batch_list, from, to, retry = TRUE) {
 
-  symbol_string <- paste(symbols, collapse=", ")
-  # Consider adding a log_summary() call here if you have it defined globally
+  result <- tibble::tibble()
 
-  data_result <- tryCatch({ tidyquant::tq_get(x = symbols, get = "stock.prices", from = date_from, to = date_to)
-  }, error = function(e) { rlang::warn(paste("Yahoo fetch failed for", symbol_string, ":", e$message)); return(NULL) })
+  tryCatch({
+    # Fetch all tickers at once
+    data <- tidyquant::tq_get(
+      x = batch_list$symbol,
+      get = "stock.prices",
+      from = from,
+      to = to
+    )
+  }, error = function(e) {
 
-  if (is.null(data_result)) { return(tibble::tibble())
-  } else if (!tibble::is_tibble(data_result) || nrow(data_result) == 0) {
-    rlang::warn(paste("No Yahoo data returned for", symbol_string)); return(tibble::tibble())
-  } else { return(data_result) }
+    message("Error during Yahoo Finance query: ", e$message)
+
+    if (retry) {
+      message("Retrying after random sleep...")
+      Sys.sleep(sample(6:15, 1))
+      return(yahoo_query_data(batch_list, from, to, retry = FALSE))
+    } else {
+      stop("Retry failed: ", e$message)
+    }
+  })
+
+  # Check if data is valid
+  if (is.null(data) || !is.data.frame(data) || nrow(data) == 0) {
+    message("No data returned for batch: ", paste(batch_list$symbol, collapse = ", "))
+    return(NULL)
+  }
+
+  # Clean and format data
+  cleaned_data <- data |>
+    dplyr::rename(
+      symbol = symbol,
+      date = date,
+      open = open,
+      high = high,
+      low = low,
+      close = close,
+      volume = volume,
+      close_adjusted = adjusted
+    ) |>
+    dplyr::mutate(
+      index_ts = if ("index_ts" %in% colnames(batch_list)) {
+        batch_list$index_ts[match(symbol, batch_list$symbol)]
+      } else {
+        symbol
+      },
+      source = "yahoo_finance"
+    ) |>
+    dplyr::arrange(symbol, date)
+
+
+  return(cleaned_data)
 }

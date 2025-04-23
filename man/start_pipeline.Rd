@@ -2,50 +2,21 @@
 % Please edit documentation in R/start_pipline.R
 \name{start_pipeline}
 \alias{start_pipeline}
-\title{Run the Full Stock Data ETL Pipeline (Database Focused)}
+\title{Start the full data pipeline: fetch, insert and log}
 \usage{
-start_pipeline(
-  batch_size = 50,
-  symbol_table_name = "sp500",
-  symbol_col_name = "symbol",
-  data_table_name = "data_sp500",
-  log_table_name = "pipeline_logs",
-  date_from,
-  date_to = Sys.Date(),
-  db_connection = NULL
-)
+start_pipeline(from = Sys.Date() - 7, to = Sys.Date(), batch_size = 25)
 }
 \arguments{
-\item{batch_size}{Integer. Max symbols per API call batch. Defaults to 50.}
+\item{from}{A Date object specifying the start date. Default is 7 days ago.}
 
-\item{symbol_table_name}{Character string. DB table containing symbols. Defaults to "sp500".}
+\item{to}{A Date object specifying the end date. Default is today.}
 
-\item{symbol_col_name}{Character string. Column name for symbols in symbol table. Defaults to "symbol".}
-
-\item{data_table_name}{Character string. Main DB table for stock data. Defaults to "data_sp500".}
-
-\item{log_table_name}{Character string. DB table for logs. Defaults to "pipeline_logs".}
-
-\item{date_from}{Character string or Date. Start date for fetching data. Required.}
-
-\item{date_to}{Character string or Date. End date for fetching data. Defaults to \code{Sys.Date()}.}
-
-\item{db_connection}{Optional. An existing DBI connection. If NULL (default),
-\code{connect_db()} is called internally and disconnected upon exit.}
+\item{batch_size}{Number of tickers to process in each batch. Default is 25.}
 }
 \value{
-Invisibly returns the final log data frame.
+Nothing. Inserts new data into PostgreSQL and logs batch processing in \code{pipeline_logs}.
 }
 \description{
-Orchestrates the process: connects to DB, fetches symbols from DB,
-processes in batches to get Yahoo data, formats, inserts new records into data table,
-logs results, and pushes logs to DB.
-}
-\examples{
-\dontrun{
-# Ensure env vars for connect_db() are set.
-# Ensure DB tables (sp500, data_sp500, pipeline_logs) exist.
-final_logs <- start_pipeline(date_from = Sys.Date() - 7)
-print(final_logs)
-}
+This function fetches data from Yahoo Finance for a range of dates and inserts the results
+into the student's PostgreSQL database. It processes symbols in batches and logs the process.
 }

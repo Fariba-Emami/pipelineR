@@ -2,20 +2,24 @@
 % Please edit documentation in R/yahoo_query_data.R
 \name{yahoo_query_data}
 \alias{yahoo_query_data}
-\title{Query Yahoo Finance Stock Price Data}
+\title{Query Yahoo Finance for historical OHLCV stock data}
 \usage{
-yahoo_query_data(symbols, date_from, date_to = Sys.Date())
+yahoo_query_data(batch_list, from, to, retry = TRUE)
 }
 \arguments{
-\item{symbols}{Character vector of stock ticker symbols.}
+\item{batch_list}{A tibble with at least a column \code{symbol}, typically output from \code{split_batch()}.}
 
-\item{date_from}{Start date (character "YYYY-MM-DD" or Date).}
+\item{from}{A Date indicating the start date for historical data.}
 
-\item{date_to}{End date (character "YYYY-MM-DD" or Date). Defaults to \code{Sys.Date()}.}
+\item{to}{A Date indicating the end date for historical data.}
+
+\item{retry}{Logical. If TRUE, allows retrying once in case of failure. If FALSE, stops immediately after the first error. Default is TRUE.}
 }
 \value{
-A tibble with stock price data. Returns empty tibble on error/no data (with warnings).
+A tibble containing the fetched OHLCV data with columns: symbol, date, open, high, low, close, volume, adjusted, index_ts, source.
 }
 \description{
-Fetches daily OHLCV + Adjusted data from Yahoo Finance using \code{tidyquant}.
+This function fetches full OHLCV (Open, High, Low, Close, Volume) data from Yahoo Finance
+for a given batch of tickers using tidyquant::tq_get. It automatically handles optional retrying
+in case of API errors for better stability.
 }

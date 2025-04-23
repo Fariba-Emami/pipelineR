@@ -1,50 +1,41 @@
-#' Push Data to Database Table
+#' Push the summary table to PostgreSQL
+#' @importFrom magrittr %>%
+#' @param con A valid DBI database connection.
+#' @param summary_table The tibble created during the pipeline (via build_summary_table and log_summary).
+#' @param user_login Optional, defaults to Sys.getenv('user_login'). The login of the student (e.g., "paul", "fariba").
 #'
-#' @description Appends data frame entries to a specified database table.
-#'
-#' @param db_connection A valid DBIConnection object.
-#' @param data_df Data frame containing the data to append.
-#' @param table_name Character string. Name of the target table. Defaults to "pipeline_logs".
-#'
-#' @return Invisibly returns TRUE if append was successful, FALSE otherwise.
-#'
-#' @importFrom DBI dbIsValid dbAppendTable
+#' @return Nothing. Pushes logs into the database.
 #' @export
-#'
-#' @examples
-#' \dontrun{
-#' con <- DBI::dbConnect(...)
-#' logs <- data.frame(timestamp = Sys.time(), message = "Process completed")
-#' push_summary_table(con, logs)
-#' }
-push_summary_table <- function(db_connection, data_df, table_name = "pipeline_logs") {
-  # Check connection
-  if (!DBI::dbIsValid(db_connection)) {
-    stop("Invalid database connection.")
+push_summary_table <- function(con, summary_table, user_login = Sys.getenv('user_login')) {
+
+  if (is.null(con) || is.null(summary_table) || is.null(user_login) || user_login == "") {
+    stop("Parameters 'con', 'summary_table', and 'user_login' must be provided.")
   }
 
-  # Validate input data
-  if (!is.data.frame(data_df)) {
-    warning("Input must be a data frame.")
-    return(invisible(FALSE))
+  if (nrow(summary_table) == 0) {
+    message("No logs to insert.")
+    return(invisible(NULL))
   }
 
-  # Handle empty data frame
-  if (nrow(data_df) == 0) {
-    message("Input data frame is empty.")
-    return(invisible(TRUE))
-  }
+  # Add user_login column
+  summary_table <- summary_table %>%
+    dplyr::mutate(user_login = user_login) %>%
+    dplyr::select(user_login, batch_id, symbol, status, n_rows, message, timestamp)
 
-  # Attempt to append data
-  message(paste("Pushing", nrow(data_df), "rows to", table_name))
+  schema <- Sys.getenv("PG_SCHEMA")
 
-  success <- tryCatch({
-    DBI::dbAppendTable(db_connection, table_name, data_df)
-    TRUE
-  }, error = function(e) {
-    warning(paste("Failed to append data to", table_name, ":", e$message))
-    FALSE
-  })
+  # Ensure that you properly define each of the variables in the context of the summary_table
+  batch_id <- symbol <- status <- n_rows <- timestamp <- NULL  # Explicitly define the variables to avoid global variable warning
 
-  invisible(success)
+  DBI::dbWriteTable(
+    conn = con,
+    name = DBI::Id(schema = schema, table = "pipeline_logs"),
+    value = summary_table,
+    append = TRUE,
+    row.names = FALSE
+  )
+
+  message("Summary table pushed to database")
+
+  invisible(NULL)
 }

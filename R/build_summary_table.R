@@ -1,15 +1,16 @@
-# --- build_summary_table() function (Empty Log Structure) ---
-#' Create Empty Log Tibble Structure
-#' @description Defines and returns an empty tibble with predefined columns for logging.
-#' @return An empty tibble with columns: timestamp, batch_id, status, message.
-#' @importFrom tibble tibble
+#' Initialize an empty summary table
+#'
+#' This function creates an empty tibble to collect the processing summary.
+#'
+#' @return A tibble with the columns: batch_id, symbol, status, n_rows, message, timestamp.
 #' @export
 build_summary_table <- function() {
-  log_structure <- tibble::tibble(
-    timestamp = Sys.time()[0], # Empty POSIXct
-    batch_id = character(),    # Empty character
-    status = character(),      # Empty character
-    message = character()      # Empty character
+  tibble::tibble(
+    batch_id = integer(),
+    symbol = character(),
+    status = character(),
+    n_rows = integer(),
+    message = character(),
+    timestamp = lubridate::now()
   )
-  return(log_structure)
 }

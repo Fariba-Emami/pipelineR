@@ -2,21 +2,19 @@
 % Please edit documentation in R/insert_new_data.R
 \name{insert_new_data}
 \alias{insert_new_data}
-\title{Insert New Data into Database Table, Avoiding Duplicates}
+\title{Insert new stock data into the database}
 \usage{
-insert_new_data(db_connection, table_name, new_data_df)
+insert_new_data(con, new_data)
 }
 \arguments{
-\item{db_connection}{A valid DBIConnection object.}
+\item{con}{A valid DBI database connection.}
 
-\item{table_name}{Character string: Target database table (e.g., "data_sp500").}
-
-\item{new_data_df}{Data frame/tibble in long format (symbol, date, metric, value).}
+\item{new_data}{A tibble matching the table structure.}
 }
 \value{
-Invisibly returns number of rows inserted. Warns/stops on error. Returns 0 on empty input/all duplicates.
+The number of rows actually inserted.
 }
 \description{
-Appends rows to a database table, checking 'symbol', 'date',
-'metric' keys to avoid duplicates. Assumes long format input.
+This function inserts new stock data into the student's data_sp500 table inside their schema.
+It automatically removes duplicates (already existing date/index_ts/metric) before inserting.
 }

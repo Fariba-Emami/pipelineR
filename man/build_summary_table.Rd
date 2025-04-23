@@ -2,13 +2,13 @@
 % Please edit documentation in R/build_summary_table.R
 \name{build_summary_table}
 \alias{build_summary_table}
-\title{Create Empty Log Tibble Structure}
+\title{Initialize an empty summary table}
 \usage{
 build_summary_table()
 }
 \value{
-An empty tibble with columns: timestamp, batch_id, status, message.
+A tibble with the columns: batch_id, symbol, status, n_rows, message, timestamp.
 }
 \description{
-Defines and returns an empty tibble with predefined columns for logging.
+This function creates an empty tibble to collect the processing summary.
 }

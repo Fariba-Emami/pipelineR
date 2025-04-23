@@ -2,16 +2,17 @@
 % Please edit documentation in R/format_data.R
 \name{format_data}
 \alias{format_data}
-\title{Format Stock Data to Long Format}
+\title{Format wide Yahoo Finance data into long format}
 \usage{
-format_data(wide_data)
+format_data(data)
 }
 \arguments{
-\item{wide_data}{Data frame/tibble with columns 'symbol', 'date', 'open', etc.}
+\item{data}{A tibble with columns like open, high, low, close, volume, close_adjusted, etc.}
 }
 \value{
-Tibble with columns 'symbol', 'date', 'metric', 'value'. Empty tibble on error/bad input.
+A tibble in long format with columns: index_ts, date, metric, value.
 }
 \description{
-Reshapes wide stock data (from \code{yahoo_query_data}) to long format.
+This function reshapes a wide tibble of stock prices into a long format
+compatible with the \code{data_sp500} database table.
 }

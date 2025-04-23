@@ -2,22 +2,26 @@
 % Please edit documentation in R/log_summary.R
 \name{log_summary}
 \alias{log_summary}
-\title{Append Log Entry to Summary Tibble}
+\title{Log Summary}
 \usage{
-log_summary(log_df, batch_id = "N/A", status = "INFO", message_text = "")
+log_summary(summary_table, batch_id, symbol, status, n_rows, message)
 }
 \arguments{
-\item{log_df}{The existing log summary tibble.}
+\item{summary_table}{The log tibble to append to.}
 
-\item{batch_id}{Character string identifier for the batch/step.}
+\item{batch_id}{Identifier of the batch.}
 
-\item{status}{Character string indicating outcome (e.g., "OK", "ERROR").}
+\item{symbol}{Stock ticker.}
 
-\item{message_text}{Character string providing details.}
+\item{status}{"OK" or "ERROR".}
+
+\item{n_rows}{Number of rows processed for this symbol.}
+
+\item{message}{Any message (e.g., error text).}
 }
 \value{
-The \code{log_df} tibble with the new log entry appended.
+Updated summary table with the new log entry.
 }
 \description{
-Adds a new row representing a log event to a log summary tibble.
+Appends a new log entry to the summary table.
 }

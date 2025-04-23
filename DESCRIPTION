@@ -1,9 +1,9 @@
 Package: pipelineR
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Stock Data Processing Pipeline
+Version: 0.1.0
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
+    person("Fariba", "Emami", email = "fariba.emami@gmail.com", role = c("aut", "cre"))
+Description: A pipeline to fetch stock tickers, download OHLCV data from Yahoo Finance using tidyquant, format it, and store it in a PostgreSQL database. It also logs each batch process and generates summary tables.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -15,11 +15,11 @@ Imports:
     glue,
     RPostgres,
     dplyr,
-    magrittr,
-    rlang,
     tibble,
     tidyquant,
-    tidyr
+    lubridate,
+    tidyr,
+    magrittr
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
